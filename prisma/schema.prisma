@@ -1,0 +1,87 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id        Int      @id @default(autoincrement())
+  nis       String   @unique
+  name      String
+  kelas     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  kasPayments    KasPayment[]
+  transactions   Transaction[]
+
+  @@map("students")
+}
+
+model KasPeriod {
+  id        Int      @id @default(autoincrement())
+  weekNo    Int
+  startsAt  DateTime
+  endsAt    DateTime
+  nominal   Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  kasPayments KasPayment[]
+
+  @@map("kas_periods")
+}
+
+model KasPayment {
+  id         Int      @id @default(autoincrement())
+  studentId  Int
+  kasPeriodId Int
+  amount     Int
+  paidAt     DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  student   Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  kasPeriod KasPeriod @relation(fields: [kasPeriodId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, kasPeriodId])
+  @@map("kas_payments")
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  kind        String   // 'income' | 'expense'
+  category    String
+  description String?
+  amount      Int
+  studentId   Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  student Student? @relation(fields: [studentId], references: [id], onDelete: SetNull)
+
+  @@map("transactions")
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      String   @default("admin")
+  avatar    String?
+  lastLogin DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
