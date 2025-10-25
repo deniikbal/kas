@@ -7,19 +7,19 @@ export const students = pgTable('students', {
   nis: varchar('nis', { length: 255 }).notNull().unique(),
   name: varchar('name', { length: 255 }).notNull(),
   kelas: varchar('kelas', { length: 255 }).notNull(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { mode: 'date' }).defaultNow().notNull().$onUpdate(() => new Date()),
 })
 
 // Kas Periods table
 export const kasPeriods = pgTable('kas_periods', {
   id: serial('id').primaryKey(),
   weekNo: integer('weekNo').notNull(),
-  startsAt: timestamp('startsAt').notNull(),
-  endsAt: timestamp('endsAt').notNull(),
+  startsAt: timestamp('startsAt', { mode: 'date' }).notNull(),
+  endsAt: timestamp('endsAt', { mode: 'date' }).notNull(),
   nominal: integer('nominal').notNull(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { mode: 'date' }).defaultNow().notNull().$onUpdate(() => new Date()),
 })
 
 // Kas Payments table
@@ -28,9 +28,9 @@ export const kasPayments = pgTable('kas_payments', {
   studentId: integer('studentId').notNull().references(() => students.id, { onDelete: 'cascade' }),
   kasPeriodId: integer('kasPeriodId').notNull().references(() => kasPeriods.id, { onDelete: 'cascade' }),
   amount: integer('amount').notNull(),
-  paidAt: timestamp('paidAt').defaultNow().notNull(),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  paidAt: timestamp('paidAt', { mode: 'date' }).defaultNow().notNull(),
+  createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { mode: 'date' }).defaultNow().notNull().$onUpdate(() => new Date()),
 }, (table) => ({
   uniqueStudentPeriod: unique().on(table.studentId, table.kasPeriodId),
 }))
@@ -43,8 +43,8 @@ export const transactions = pgTable('transactions', {
   description: text('description'),
   amount: integer('amount').notNull(),
   studentId: integer('studentId').references(() => students.id, { onDelete: 'set null' }),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { mode: 'date' }).defaultNow().notNull().$onUpdate(() => new Date()),
 })
 
 // Users table
@@ -55,9 +55,9 @@ export const users = pgTable('users', {
   password: varchar('password', { length: 255 }).notNull(),
   role: varchar('role', { length: 50 }).notNull().default('admin'),
   avatar: varchar('avatar', { length: 255 }),
-  lastLogin: timestamp('lastLogin'),
-  createdAt: timestamp('createdAt').defaultNow().notNull(),
-  updatedAt: timestamp('updatedAt').defaultNow().notNull(),
+  lastLogin: timestamp('lastLogin', { mode: 'date' }),
+  createdAt: timestamp('createdAt', { mode: 'date' }).defaultNow().notNull(),
+  updatedAt: timestamp('updatedAt', { mode: 'date' }).defaultNow().notNull().$onUpdate(() => new Date()),
 })
 
 // Relations

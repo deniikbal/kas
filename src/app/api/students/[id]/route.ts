@@ -65,7 +65,6 @@ export async function PUT(
         nis,
         name,
         kelas,
-        updatedAt: new Date(),
       })
       .where(eq(students.id, parseInt(params.id)))
       .returning()

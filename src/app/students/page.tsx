@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Skeleton } from '@/components/ui/skeleton'
 import { toast } from '@/hooks/use-toast'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { UserPlus, Edit, Trash2 } from 'lucide-react'
+import { UserPlus, Edit, Trash2, Search } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface Student {
   id: number
@@ -41,6 +42,8 @@ export default function StudentsPage() {
     type: 'delete'
   })
   const [actionLoading, setActionLoading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterKelas, setFilterKelas] = useState<string>('all')
 
   useEffect(() => {
     fetchStudents()
@@ -260,6 +263,32 @@ export default function StudentsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {/* Search and Filter */}
+          {students.length > 0 && (
+            <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Cari nama atau NIS siswa..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={filterKelas} onValueChange={(value) => setFilterKelas(value)}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter Kelas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Kelas</SelectItem>
+                  {Array.from(new Set(students.map(s => s.kelas))).sort().map(kelas => (
+                    <SelectItem key={kelas} value={kelas}>{kelas}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {students.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">Belum ada data siswa</p>
@@ -268,19 +297,43 @@ export default function StudentsPage() {
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>NIS</TableHead>
-                    <TableHead>Nama</TableHead>
-                    <TableHead>Kelas</TableHead>
-                    <TableHead>Tanggal Daftar</TableHead>
-                    <TableHead className="text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {students.map((student) => (
+            <>
+              {/* Result Count */}
+              <div className="text-sm text-muted-foreground mb-4">
+                Menampilkan {
+                  students.filter((student) => {
+                    const searchLower = searchTerm.toLowerCase()
+                    const matchesSearch = searchTerm === '' ||
+                      student.name.toLowerCase().includes(searchLower) ||
+                      student.nis.toLowerCase().includes(searchLower)
+                    const matchesKelas = filterKelas === 'all' || student.kelas === filterKelas
+                    return matchesSearch && matchesKelas
+                  }).length
+                } dari {students.length} siswa
+              </div>
+
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>NIS</TableHead>
+                      <TableHead>Nama</TableHead>
+                      <TableHead>Kelas</TableHead>
+                      <TableHead>Tanggal Daftar</TableHead>
+                      <TableHead className="text-right">Aksi</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {students
+                      .filter((student) => {
+                        const searchLower = searchTerm.toLowerCase()
+                        const matchesSearch = searchTerm === '' ||
+                          student.name.toLowerCase().includes(searchLower) ||
+                          student.nis.toLowerCase().includes(searchLower)
+                        const matchesKelas = filterKelas === 'all' || student.kelas === filterKelas
+                        return matchesSearch && matchesKelas
+                      })
+                      .map((student) => (
                     <TableRow key={student.id}>
                       <TableCell className="font-medium">{student.nis}</TableCell>
                       <TableCell>{student.name}</TableCell>
@@ -311,10 +364,27 @@ export default function StudentsPage() {
                         </div>
                       </TableCell>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                      ))}
+                  </TableBody>
+                </Table>
+                
+                {/* No Results Message */}
+                {students.filter((student) => {
+                  const searchLower = searchTerm.toLowerCase()
+                  const matchesSearch = searchTerm === '' ||
+                    student.name.toLowerCase().includes(searchLower) ||
+                    student.nis.toLowerCase().includes(searchLower)
+                  const matchesKelas = filterKelas === 'all' || student.kelas === filterKelas
+                  return matchesSearch && matchesKelas
+                }).length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">
+                      Tidak ada siswa yang sesuai dengan pencarian atau filter
+                    </p>
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

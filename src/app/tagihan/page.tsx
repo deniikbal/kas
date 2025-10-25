@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from '@/hooks/use-toast'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { Plus, CheckCircle, Clock, DollarSign, Calendar } from 'lucide-react'
+import { Plus, CheckCircle, Clock, DollarSign, Calendar, Search } from 'lucide-react'
 
 interface KasPeriod {
   id: number
@@ -61,6 +61,8 @@ export default function TagihanPage() {
     type: 'payment'
   })
   const [actionLoading, setActionLoading] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterStatus, setFilterStatus] = useState<'all' | 'paid' | 'unpaid'>('all')
 
   useEffect(() => {
     fetchPeriods()
@@ -395,13 +397,54 @@ export default function TagihanPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {/* Search and Filter */}
+              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Cari nama atau NIS siswa..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={filterStatus} onValueChange={(value: 'all' | 'paid' | 'unpaid') => setFilterStatus(value)}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Filter Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Status</SelectItem>
+                    <SelectItem value="paid">Sudah Bayar</SelectItem>
+                    <SelectItem value="unpaid">Belum Bayar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               {paymentItems.length === 0 ? (
                 <div className="text-center py-8">
                   <p className="text-muted-foreground">Belum ada data siswa</p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
+                <>
+                  {/* Result Count */}
+                  <div className="text-sm text-muted-foreground mb-4">
+                    Menampilkan {
+                      paymentItems.filter((item) => {
+                        const searchLower = searchTerm.toLowerCase()
+                        const matchesSearch = searchTerm === '' ||
+                          item.student.name.toLowerCase().includes(searchLower) ||
+                          item.student.nis.toLowerCase().includes(searchLower)
+                        const matchesStatus = 
+                          filterStatus === 'all' ||
+                          (filterStatus === 'paid' && item.payment !== null) ||
+                          (filterStatus === 'unpaid' && item.payment === null)
+                        return matchesSearch && matchesStatus
+                      }).length
+                    } dari {paymentItems.length} siswa
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <Table>
                     <TableHeader>
                       <TableRow>
                         <TableHead>NIS</TableHead>
@@ -414,7 +457,23 @@ export default function TagihanPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {paymentItems.map((item) => (
+                      {paymentItems
+                        .filter((item) => {
+                          // Search filter
+                          const searchLower = searchTerm.toLowerCase()
+                          const matchesSearch = searchTerm === '' ||
+                            item.student.name.toLowerCase().includes(searchLower) ||
+                            item.student.nis.toLowerCase().includes(searchLower)
+
+                          // Status filter
+                          const matchesStatus = 
+                            filterStatus === 'all' ||
+                            (filterStatus === 'paid' && item.payment !== null) ||
+                            (filterStatus === 'unpaid' && item.payment === null)
+
+                          return matchesSearch && matchesStatus
+                        })
+                        .map((item) => (
                         <TableRow key={item.student.id}>
                           <TableCell className="font-medium">{item.student.nis}</TableCell>
                           <TableCell>{item.student.name}</TableCell>
@@ -457,7 +516,27 @@ export default function TagihanPage() {
                       ))}
                     </TableBody>
                   </Table>
+                  
+                  {/* No Results Message */}
+                  {paymentItems.filter((item) => {
+                    const searchLower = searchTerm.toLowerCase()
+                    const matchesSearch = searchTerm === '' ||
+                      item.student.name.toLowerCase().includes(searchLower) ||
+                      item.student.nis.toLowerCase().includes(searchLower)
+                    const matchesStatus = 
+                      filterStatus === 'all' ||
+                      (filterStatus === 'paid' && item.payment !== null) ||
+                      (filterStatus === 'unpaid' && item.payment === null)
+                    return matchesSearch && matchesStatus
+                  }).length === 0 && (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground">
+                        Tidak ada siswa yang sesuai dengan pencarian atau filter
+                      </p>
+                    </div>
+                  )}
                 </div>
+                </>
               )}
             </CardContent>
           </Card>
