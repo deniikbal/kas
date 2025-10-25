@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { kasPeriods } from '@/lib/db/schema'
+import { eq, desc } from 'drizzle-orm'
 
 export async function GET() {
   try {
-    const periods = await db.kasPeriod.findMany({
-      orderBy: {
-        weekNo: 'desc'
-      }
-    })
+    const periods = await db.select().from(kasPeriods).orderBy(desc(kasPeriods.weekNo))
     return NextResponse.json(periods)
   } catch (error) {
     console.error('Error fetching kas periods:', error)
@@ -30,25 +28,28 @@ export async function POST(request: Request) {
     }
 
     // Check if week number already exists
-    const existingPeriod = await db.kasPeriod.findFirst({
-      where: { weekNo }
-    })
+    const existingPeriod = await db
+      .select()
+      .from(kasPeriods)
+      .where(eq(kasPeriods.weekNo, weekNo))
+      .limit(1)
 
-    if (existingPeriod) {
+    if (existingPeriod.length > 0) {
       return NextResponse.json(
         { error: 'Week number already exists' },
         { status: 400 }
       )
     }
 
-    const period = await db.kasPeriod.create({
-      data: {
+    const [period] = await db
+      .insert(kasPeriods)
+      .values({
         weekNo,
         nominal,
         startsAt: new Date(startsAt),
-        endsAt: new Date(endsAt)
-      }
-    })
+        endsAt: new Date(endsAt),
+      })
+      .returning()
 
     return NextResponse.json(period, { status: 201 })
   } catch (error) {

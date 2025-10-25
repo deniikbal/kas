@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { users } from '@/lib/db/schema'
+import { eq } from 'drizzle-orm'
 import bcrypt from 'bcryptjs'
 
 export async function POST(request: Request) {
@@ -14,9 +16,11 @@ export async function POST(request: Request) {
     }
 
     // Find user by email
-    const user = await db.user.findUnique({
-      where: { email }
-    })
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1)
 
     if (!user) {
       return NextResponse.json(
@@ -36,10 +40,10 @@ export async function POST(request: Request) {
     }
 
     // Update last login
-    await db.user.update({
-      where: { id: user.id },
-      data: { lastLogin: new Date() }
-    })
+    await db
+      .update(users)
+      .set({ lastLogin: new Date() })
+      .where(eq(users.id, user.id))
 
     // Return user data without password
     const { password: _, ...userWithoutPassword } = user

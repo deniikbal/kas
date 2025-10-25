@@ -1,23 +1,31 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { transactions, students } from '@/lib/db/schema'
+import { desc, eq } from 'drizzle-orm'
 
 export async function GET() {
   try {
-    const transactions = await db.transaction.findMany({
-      include: {
+    const allTransactions = await db
+      .select({
+        id: transactions.id,
+        kind: transactions.kind,
+        category: transactions.category,
+        description: transactions.description,
+        amount: transactions.amount,
+        studentId: transactions.studentId,
+        createdAt: transactions.createdAt,
+        updatedAt: transactions.updatedAt,
         student: {
-          select: {
-            id: true,
-            name: true,
-            nis: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    })
-    return NextResponse.json(transactions)
+          id: students.id,
+          name: students.name,
+          nis: students.nis,
+        },
+      })
+      .from(transactions)
+      .leftJoin(students, eq(transactions.studentId, students.id))
+      .orderBy(desc(transactions.createdAt))
+    
+    return NextResponse.json(allTransactions)
   } catch (error) {
     console.error('Error fetching transactions:', error)
     return NextResponse.json(
@@ -45,26 +53,43 @@ export async function POST(request: Request) {
       )
     }
 
-    const transaction = await db.transaction.create({
-      data: {
+    const [transaction] = await db
+      .insert(transactions)
+      .values({
         kind,
         category,
         description,
         amount,
-        studentId: studentId || null
-      },
-      include: {
-        student: {
-          select: {
-            id: true,
-            name: true,
-            nis: true
-          }
-        }
-      }
-    })
+        studentId: studentId || null,
+      })
+      .returning()
 
-    return NextResponse.json(transaction, { status: 201 })
+    // Fetch with student data if studentId exists
+    let result = transaction
+    if (transaction.studentId) {
+      const [transactionWithStudent] = await db
+        .select({
+          id: transactions.id,
+          kind: transactions.kind,
+          category: transactions.category,
+          description: transactions.description,
+          amount: transactions.amount,
+          studentId: transactions.studentId,
+          createdAt: transactions.createdAt,
+          updatedAt: transactions.updatedAt,
+          student: {
+            id: students.id,
+            name: students.name,
+            nis: students.nis,
+          },
+        })
+        .from(transactions)
+        .leftJoin(students, eq(transactions.studentId, students.id))
+        .where(eq(transactions.id, transaction.id))
+      result = transactionWithStudent
+    }
+
+    return NextResponse.json(result, { status: 201 })
   } catch (error) {
     console.error('Error creating transaction:', error)
     return NextResponse.json(

@@ -1,14 +1,18 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { students } from '@/lib/db/schema'
+import { eq, and, ne } from 'drizzle-orm'
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const student = await db.student.findUnique({
-      where: { id: parseInt(params.id) }
-    })
+    const [student] = await db
+      .select()
+      .from(students)
+      .where(eq(students.id, parseInt(params.id)))
+      .limit(1)
 
     if (!student) {
       return NextResponse.json(
@@ -42,28 +46,29 @@ export async function PUT(
     }
 
     // Check if NIS already exists for another student
-    const existingStudent = await db.student.findFirst({
-      where: {
-        nis,
-        id: { not: parseInt(params.id) }
-      }
-    })
+    const existingStudent = await db
+      .select()
+      .from(students)
+      .where(and(eq(students.nis, nis), ne(students.id, parseInt(params.id))))
+      .limit(1)
 
-    if (existingStudent) {
+    if (existingStudent.length > 0) {
       return NextResponse.json(
         { error: 'NIS already exists' },
         { status: 400 }
       )
     }
 
-    const student = await db.student.update({
-      where: { id: parseInt(params.id) },
-      data: {
+    const [student] = await db
+      .update(students)
+      .set({
         nis,
         name,
-        kelas
-      }
-    })
+        kelas,
+        updatedAt: new Date(),
+      })
+      .where(eq(students.id, parseInt(params.id)))
+      .returning()
 
     return NextResponse.json(student)
   } catch (error) {
@@ -80,9 +85,9 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    await db.student.delete({
-      where: { id: parseInt(params.id) }
-    })
+    await db
+      .delete(students)
+      .where(eq(students.id, parseInt(params.id)))
 
     return NextResponse.json({ message: 'Student deleted successfully' })
   } catch (error) {

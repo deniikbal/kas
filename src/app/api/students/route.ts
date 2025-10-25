@@ -1,14 +1,12 @@
 import { NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { students } from '@/lib/db/schema'
+import { eq, asc } from 'drizzle-orm'
 
 export async function GET() {
   try {
-    const students = await db.student.findMany({
-      orderBy: {
-        name: 'asc'
-      }
-    })
-    return NextResponse.json(students)
+    const allStudents = await db.select().from(students).orderBy(asc(students.name))
+    return NextResponse.json(allStudents)
   } catch (error) {
     console.error('Error fetching students:', error)
     return NextResponse.json(
@@ -30,24 +28,27 @@ export async function POST(request: Request) {
     }
 
     // Check if NIS already exists
-    const existingStudent = await db.student.findUnique({
-      where: { nis }
-    })
+    const existingStudent = await db
+      .select()
+      .from(students)
+      .where(eq(students.nis, nis))
+      .limit(1)
 
-    if (existingStudent) {
+    if (existingStudent.length > 0) {
       return NextResponse.json(
         { error: 'NIS already exists' },
         { status: 400 }
       )
     }
 
-    const student = await db.student.create({
-      data: {
+    const [student] = await db
+      .insert(students)
+      .values({
         nis,
         name,
-        kelas
-      }
-    })
+        kelas,
+      })
+      .returning()
 
     return NextResponse.json(student, { status: 201 })
   } catch (error) {
