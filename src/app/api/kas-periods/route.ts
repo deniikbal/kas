@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { kasPeriods } from '@/lib/db/schema'
 import { eq, desc } from 'drizzle-orm'
 
+export const runtime = 'edge';
+
 export async function GET() {
   try {
     const periods = await db.select().from(kasPeriods).orderBy(desc(kasPeriods.weekNo))

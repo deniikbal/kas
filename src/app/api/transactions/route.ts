@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { transactions, students } from '@/lib/db/schema'
 import { desc, eq } from 'drizzle-orm'
 
+export const runtime = 'edge';
+
 export async function GET() {
   try {
     const allTransactions = await db

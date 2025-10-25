@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { students, transactions, kasPeriods, kasPayments } from '@/lib/db/schema'
 import { eq, and, lte, gte, count } from 'drizzle-orm'
 
+export const runtime = 'edge';
+
 export async function GET() {
   try {
     // Get total students

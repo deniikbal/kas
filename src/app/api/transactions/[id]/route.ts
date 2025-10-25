@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { transactions } from '@/lib/db/schema'
 import { eq } from 'drizzle-orm'
 
+export const runtime = 'edge';
+
 export async function DELETE(
   request: Request,
   { params }: { params: { id: string } }

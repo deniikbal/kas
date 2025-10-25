@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { kasPayments, transactions } from '@/lib/db/schema'
 import { eq, and } from 'drizzle-orm'
 
+export const runtime = 'edge';
+
 export async function POST(request: Request) {
   try {
     const { studentId, kasPeriodId, amount } = await request.json()

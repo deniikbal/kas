@@ -3,6 +3,8 @@ import { db } from '@/lib/db'
 import { students } from '@/lib/db/schema'
 import { eq, and, ne } from 'drizzle-orm'
 
+export const runtime = 'edge';
+
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
