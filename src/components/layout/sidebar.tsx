@@ -140,7 +140,10 @@ export default function Sidebar({ className, collapsed }: SidebarProps) {
                 {!collapsed && (
                   <div className="flex-1 text-left">
                     <div className="text-sm font-medium">{item.label}</div>
-                    <div className="text-xs text-muted-foreground">{item.description}</div>
+                    <div className={cn(
+                      "text-xs",
+                      isActive ? "text-primary-foreground/80" : "text-muted-foreground"
+                    )}>{item.description}</div>
                   </div>
                 )}
                 {collapsed && (
